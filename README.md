@@ -4,7 +4,7 @@
 
 A daemon, command line tool and GTK4 GUI for the 4 zone keyboard backlight of the ITE 8291 controller (USB `048d:ce00`, bcdDevice 0.02) found in some Avell and Clevo/Tongfang laptops. It is an independent, unofficial project, not affiliated with or endorsed by Avell, ITE or Clevo. Product names are used only to identify the hardware this software works with.
 
-Status: version 0.1.0, written from published protocol descriptions. The frames were checked on a real ITE 8291 rev 0.02 keyboard on 2026-11-24 (static zones, brightness, off, speed, most effects); see [docs/protocol.md](docs/protocol.md) for what is verified and what is not. The test suite itself uses a fake keyboard.
+Status: version 0.1.1, written from published protocol descriptions. The frames were checked on a real ITE 8291 rev 0.02 keyboard on 2026-11-24 (static zones, brightness, off, speed, most effects); see [docs/protocol.md](docs/protocol.md) for what is verified and what is not. The test suite itself uses a fake keyboard.
 
 ## What it does
 
@@ -85,6 +85,10 @@ avell-rgb-gui
 ```
 
 `avell-rgb --help` lists everything; there is no separate man page yet.
+
+## Troubleshooting
+
+If every command that changes the keyboard says "not authorized" while `avell-rgb status` works, check the daemon log with `journalctl -u avell-rgbd` for polkit errors. The message "Only trusted callers (e.g. uid 0 or an action owner) can use CheckAuthorization() for subjects belonging to other identities" means the installed polkit policy lacks the `org.freedesktop.policykit.owner` annotation naming the daemon user `avell-rgb`. Version 0.1.1 and newer ship it; upgrade the package. Without that error, the caller is probably not in an active local session, which the polkit action denies by default.
 
 ## Develop
 

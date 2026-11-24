@@ -17,7 +17,7 @@ Open items after the first hardware test on 2026-11-24 (see docs/protocol.md for
 ## Packaging and CI
 
 - [ ] Confirm the first GitHub Actions runs (CI, Package, Tag Release) are green, and fix anything that fails.
-- [ ] Install the built .deb on branco and check the daemon, polkit path, udev rule, sysusers and maintainer scripts on a real system.
+- [ ] Install the built .deb on branco and check the daemon, polkit path, udev rule, sysusers and maintainer scripts on a real system. Partly done: installed on branco, the polkit owner annotation bug was found and fixed in 0.1.1; icon and maintainer-script checks still to confirm.
 - [ ] Run the rpm checks (skipped locally because rpm is not installed; CI runs them) and test an install on a Fedora-family system.
 - [x] Test the code on Python 3.10 to 3.14 and in a venv without PyGObject (CI job `portable` runs the suite on 3.10 to 3.14 without PyGObject, and `tests/test_imports.py` pins which modules import without `gi`).
 
