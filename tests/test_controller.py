@@ -55,7 +55,7 @@ def test_firmware_effect_frames(rig: Rig) -> None:
     assert rig.take()[-1][2] == protocol.MODE_DIRECT
 
 
-def test_nothing_ever_sends_save_or_persist_by_default(rig: Rig) -> None:
+def test_nothing_ever_sends_save_or_persist(rig: Rig) -> None:
     c = rig.controller
     c.set_zones(["ff0000"] * 4)
     c.set_zone(2, "00ff00")
@@ -75,24 +75,6 @@ def test_nothing_ever_sends_save_or_persist_by_default(rig: Rig) -> None:
     assert frames
     assert all(f[0] != 0x1A for f in frames)
     assert all(f[7] == 0 for f in modes(frames))
-
-
-def test_firmware_save_is_the_only_path_with_save(rig: Rig) -> None:
-    rig.controller.set_zones(["ff0000"] * 4)
-    rig.take()
-    rig.controller.save_to_firmware()
-    frames = rig.take()
-    assert frames[-1] == protocol.persist_frame()
-    assert modes(frames)[0][7] == 0x01
-
-
-def test_firmware_save_refuses_when_off_or_software(rig: Rig) -> None:
-    rig.controller.set_power(False)
-    with pytest.raises(InvalidArgument):
-        rig.controller.save_to_firmware()
-    rig.controller.start_software_effect("fade", {})
-    with pytest.raises(InvalidArgument):
-        rig.controller.save_to_firmware()
 
 
 def test_software_effect_ticks_at_fps_and_stops_cleanly(rig: Rig) -> None:

@@ -158,14 +158,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     ssub.add_parser("stop", help="stop the running effect")
     ssub.add_parser("list", help="list effect names")
-
-    p = sub.add_parser(
-        "save",
-        help="EXPERIMENTAL: store the current state in keyboard firmware",
-        description="Writes the current state into the keyboard firmware (SAVE byte and persist "
-        "frame). Experimental and unverified on hardware. Needs --confirm.",
-    )
-    p.add_argument("--confirm", action="store_true", help="acknowledge the experimental write")
     return parser
 
 
@@ -244,15 +236,6 @@ def run(args: argparse.Namespace, client: Any) -> int:
         else:
             for name in client.list_effects()[1]:
                 print(name)
-    elif cmd == "save":
-        if not args.confirm:
-            print(
-                "avell-rgb: saving to firmware is EXPERIMENTAL and unverified. "
-                "Re-run with --confirm to proceed.",
-                file=sys.stderr,
-            )
-            return 2
-        client.save_to_firmware()
     return 0
 
 

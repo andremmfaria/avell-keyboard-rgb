@@ -85,11 +85,10 @@ def test_profiles(capsys: pytest.CaptureFixture[str]) -> None:
     assert capsys.readouterr().out.split() == ["a", "b"]
 
 
-def test_save_needs_confirm() -> None:
-    code, c = run("save")
-    assert code == 2 and c.calls == []
-    code, c = run("save", "--confirm")
-    assert code == 0 and c.calls == [("save_to_firmware",)]
+def test_firmware_save_command_is_gone() -> None:
+    with pytest.raises(SystemExit) as exc:
+        run("save", "--confirm")
+    assert exc.value.code == 2
 
 
 @pytest.mark.parametrize(

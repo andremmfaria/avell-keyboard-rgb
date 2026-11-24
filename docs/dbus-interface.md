@@ -69,7 +69,6 @@ This is the contract between the daemon (`avell-rgbd`) and its clients (`avell-r
     <method name="GetState">
       <arg type="a{sv}" name="state" direction="out"/>
     </method>
-    <method name="ExperimentalSaveToFirmware"/>
     <property name="Version" type="s" access="read"/>
     <property name="DeviceConnected" type="b" access="read"/>
     <property name="Power" type="b" access="read"/>
@@ -97,7 +96,6 @@ This is the contract between the daemon (`avell-rgbd`) and its clients (`avell-r
 | `ListEffects()` | Returns the firmware and software effect names. |
 | `SaveProfile(s)` / `LoadProfile(s)` / `DeleteProfile(s)` / `ListProfiles()` | Named snapshots of the whole state (power, brightness, zones, effect, software effect) stored under `/var/lib/avell-keyboard-rgb/profiles`. Saving an existing name overwrites it. Loading applies it at once. |
 | `GetState()` | Returns the same data as the properties plus `effect` options, `software_options`, `device_path` and `last_error`, as `a{sv}`. |
-| `ExperimentalSaveToFirmware()` | Writes the current static or effect state into the keyboard firmware so it survives a power cycle. Experimental and unverified: it is the only call that ever sends the SAVE byte or the persist frame. Never called implicitly. |
 
 ## Properties and signals
 

@@ -327,28 +327,6 @@ class Controller:
     def list_profiles(self) -> list[str]:
         return self.store.list_profiles()
 
-    def save_to_firmware(self) -> None:
-        """Experimental. The only place the SAVE byte and the persist frame are ever sent."""
-        state = self.state
-        if not state.power or state.software:
-            raise InvalidArgument("power on and stop software effects before saving to firmware")
-        if state.effect:
-            e = state.effect
-            frames = protocol.effect_frames(
-                e["name"],
-                e["speed"],
-                state.brightness,
-                [protocol.parse_color(c) for c in e["palette"]],
-                e["direction"],
-                save=True,
-            )
-        else:
-            frames = protocol.zones_frames(
-                [protocol.parse_color(c) for c in state.zones], state.brightness, save=True
-            )
-        frames.append(protocol.persist_frame())
-        self._send(frames)
-
     # --- queries -----------------------------------------------------------
     def firmware_effects(self) -> list[str]:
         return list(protocol.FIRMWARE_EFFECTS)

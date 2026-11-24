@@ -59,7 +59,6 @@ INTERFACE_XML = """<node>
     <method name="GetState">
       <arg type="a{sv}" name="state" direction="out"/>
     </method>
-    <method name="ExperimentalSaveToFirmware"/>
     <property name="Version" type="s" access="read"/>
     <property name="DeviceConnected" type="b" access="read"/>
     <property name="Power" type="b" access="read"/>

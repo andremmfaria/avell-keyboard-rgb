@@ -204,6 +204,3 @@ class Client:
 
     def get_state(self) -> dict[str, Any]:
         return dict(self.call("GetState")[0])
-
-    def save_to_firmware(self) -> None:
-        self.call("ExperimentalSaveToFirmware")

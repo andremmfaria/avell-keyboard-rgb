@@ -23,9 +23,8 @@ Each command is one 8 byte HID feature report with no report ID, sent with the `
 | Frame | Meaning |
 |---|---|
 | `14 00 Z R G B 00 00` | Colour definition. `Z` 1 to 4 sets zone colours in direct mode, `Z` 1 to 7 sets the effect palette |
-| `08 02 MODE SPEED BRIGHT 08 BEHAV SAVE` | Mode frame: power on, mode, speed, brightness. Byte 6 is always `08`. `BEHAV` is a direction or behaviour byte. `SAVE` is always `00` unless the explicit firmware save is used |
+| `08 02 MODE SPEED BRIGHT 08 BEHAV 00` | Mode frame: power on, mode, speed, brightness. Byte 6 is always `08`. `BEHAV` is a direction or behaviour byte. The last byte (the firmware SAVE byte) is always `00` |
 | `08 01 00 00 00 00 00 00` | Off |
-| `1a 00 01 04 00 00 00 01` | Persist frame. Only sent by the experimental save command |
 
 Modes: direct `01`, breathing `02`, wave `03`, rainbow `05`, raindrop `0a` (unsupported, see below), flashing `12`, gradient `13`. Ranges: brightness 0 to 50, user speed 0 to 10 (higher is faster, see below), direction 0 to 4.
 
@@ -56,7 +55,7 @@ Evidence file for every row: `rgb-test-20261124-011715.log`.
 | Colour cast needing `COLOR_SCALE` | Unverified | Not examined beyond the primary colours looking right |
 | Brightness-only frame `09 02 BRIGHT 00 00 00 00 00` | Unverified | Not tested, not used |
 | State kept across suspend | Unverified | Not tested; the daemon re-applies after resume regardless |
-| SAVE byte and persist frame | Unverified | Never sent by the test or by default |
+| SAVE byte and persist frame (`1a 00 01 04 00 00 00 01`) | Unverified, not implemented | Never sent by the hardware test, so their effect is unknown. They were removed from the code |
 
 ## Raindrop
 
@@ -65,7 +64,7 @@ The mode constant stays in `protocol.py` (`MODES`, with `UNSUPPORTED_EFFECTS`) b
 ## What the software never sends
 
 - No opcode other than the four above.
-- No SAVE byte and no persist frame unless the user runs `avell-rgb save --confirm` (D-Bus `ExperimentalSaveToFirmware`). Persistence across power cycles is otherwise done by the daemon re-applying its own state at boot and after resume, so the firmware flash is not written on every change.
+- No SAVE byte and no persist frame. Firmware writes are intentionally not implemented, and the earlier experimental save command was removed. Persistence across power cycles is done by the daemon re-applying its own state at boot and after resume, so the firmware flash is never written.
 - No firmware update or flashing commands.
 - Frames outside the documented ranges: values are clamped in `protocol.py` before they reach the wire. Out of range brightness has been reported to wedge a different ITE chip.
 
@@ -74,6 +73,5 @@ The mode constant stays in `protocol.py` (`MODES`, with `UNSUPPORTED_EFFECTS`) b
 1. Other wave direction values (`DIRECTION_MIN`, `DIRECTION_MAX`).
 2. A colour cast that needs per channel scaling (`COLOR_SCALE`).
 3. Whether suspend keeps the keyboard state.
-4. Whether the experimental firmware save works. It was not tested.
 
 If the `tuxedo-drivers` kernel module is loaded for this device it owns the HID device and the two would conflict; unload it or do not install this package.

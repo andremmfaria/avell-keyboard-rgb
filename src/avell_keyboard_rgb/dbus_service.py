@@ -125,7 +125,6 @@ class Service:
             "SaveProfile": controller.save_profile,
             "LoadProfile": controller.load_profile,
             "DeleteProfile": controller.delete_profile,
-            "ExperimentalSaveToFirmware": controller.save_to_firmware,
             "ListEffects": lambda: GLib.Variant(
                 "(asas)", (controller.firmware_effects(), controller.software_effects())
             ),

@@ -12,7 +12,6 @@ Open items after the first hardware test on 2026-11-24 (see docs/protocol.md for
 - [ ] Rainbow showed only red, orange, yellow and green on four regions, so find out whether it uses the palette slots and how.
 - [ ] State across suspend and resume (logind PrepareForSleep reapply path).
 - [ ] Brightness-only frame and colour cast of the zone colours.
-- [ ] Firmware save and persist frames (experimental, never sent by default): decide whether to test them at all.
 - [ ] Look at the GUI on screen (so far only smoke tests under Xvfb).
 
 ## Packaging and CI

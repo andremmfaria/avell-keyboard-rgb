@@ -28,14 +28,14 @@ Tested on 2026-11-24 on one real ITE 8291 rev 0.02 laptop keyboard (log: `rgb-te
 - Speed is inverted in the firmware. The software hides this: you set 0 to 10, higher is faster.
 - Rainbow works but showed only red, orange, yellow and green on regions, so it seems not to use all 7 palette colours. Not explained.
 - Raindrop did nothing on this revision, so it is not offered. The daemon refuses it unless you pass `--allow-unverified` (CLI) or the `allow_unverified` option (D-Bus).
-- Not tested: wave directions other than left to right, the firmware save, behaviour across suspend.
+- Not tested: wave directions other than left to right, behaviour across suspend.
 
 ## Safety notes
 
 - The daemon sends only the documented frames (see [docs/protocol.md](docs/protocol.md)) and clamps every value to the documented range.
-- It never writes to the keyboard firmware unless you ask. `avell-rgb save --confirm` (experimental, unverified) is the only command that sends the firmware save byte and persist frame. Do not script it.
+- It never writes to the keyboard firmware. Saving state into the firmware is intentionally not implemented, and the mode frame's save byte is always 0.
 - No firmware flashing code exists in this project.
-- Without firmware save, the keyboard forgets its state at power off, and the daemon restores it.
+- The keyboard forgets its state at power off, and the daemon restores it.
 
 ## Install
 

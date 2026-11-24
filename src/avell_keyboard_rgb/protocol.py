@@ -50,9 +50,8 @@ POWER_OFF = 0x01
 POWER_ON = 0x02
 # Fixed seventh byte of the mode frame.
 MODE_FIXED_BYTE = 0x08
-# Persist frame. Only ever sent by the explicit, experimental save command.
-PERSIST_FRAME = bytes([0x1A, 0x00, 0x01, 0x04, 0x00, 0x00, 0x00, 0x01])
-SAVE_FLAG = 0x01
+# Last byte of the mode frame. Always 0: firmware writes are not implemented.
+MODE_SAVE_BYTE = 0x00
 
 # --- modes -----------------------------------------------------------------
 MODE_DIRECT = 0x01
@@ -132,10 +131,8 @@ def mode_frame(
     speed: int,
     brightness: int,
     behaviour: int = 0,
-    *,
-    save: bool = False,
 ) -> Frame:
-    """Mode frame: 08 02 MODE SPEED BRIGHT 08 BEHAV SAVE. SAVE is 0 unless asked.
+    """Mode frame: 08 02 MODE SPEED BRIGHT 08 BEHAV 00. The last byte is always 0.
 
     `speed` is the user value, 0..10, higher is faster; it is inverted on the wire.
     """
@@ -149,7 +146,7 @@ def mode_frame(
         clamp(brightness, BRIGHTNESS_MIN, BRIGHTNESS_MAX),
         MODE_FIXED_BYTE,
         clamp(behaviour, DIRECTION_MIN, DIRECTION_MAX),
-        SAVE_FLAG if save else 0x00,
+        MODE_SAVE_BYTE,
     )
 
 
@@ -157,21 +154,17 @@ def off_frame() -> Frame:
     return _frame(OP_MODE, POWER_OFF, 0, 0, 0, 0, 0, 0)
 
 
-def persist_frame() -> Frame:
-    return PERSIST_FRAME
-
-
 def default_direction(name: str) -> int:
     """BEHAV default: left to right for wave (verified), 0 for everything else."""
     return WAVE_LEFT_TO_RIGHT if name == "wave" else 0
 
 
-def zones_frames(colors: Sequence[RGB], brightness: int, *, save: bool = False) -> list[Frame]:
+def zones_frames(colors: Sequence[RGB], brightness: int) -> list[Frame]:
     """Frames for a static 4 zone image: four colour frames, then direct mode."""
     if len(colors) != ZONE_COUNT:
         raise ValueError(f"expected {ZONE_COUNT} colours, got {len(colors)}")
     frames = [color_frame(i + 1, rgb) for i, rgb in enumerate(colors)]
-    frames.append(mode_frame(MODE_DIRECT, SPEED_MAX - DIRECT_SPEED_WIRE, brightness, save=save))
+    frames.append(mode_frame(MODE_DIRECT, SPEED_MAX - DIRECT_SPEED_WIRE, brightness))
     return frames
 
 
@@ -181,8 +174,6 @@ def effect_frames(
     brightness: int,
     palette: Sequence[RGB] | None = None,
     direction: int | None = None,
-    *,
-    save: bool = False,
 ) -> list[Frame]:
     """Frames for a firmware effect: palette colour frames, then the mode frame."""
     if name not in MODES:
@@ -193,5 +184,5 @@ def effect_frames(
     frames = [color_frame(i + 1, rgb) for i, rgb in enumerate(colors)]
     if direction is None:
         direction = default_direction(name)
-    frames.append(mode_frame(MODES[name], speed, brightness, direction, save=save))
+    frames.append(mode_frame(MODES[name], speed, brightness, direction))
     return frames

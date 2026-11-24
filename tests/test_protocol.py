@@ -20,7 +20,7 @@ def test_color_channels_are_clamped() -> None:
     assert protocol.color_frame(1, (300, -5, 255))[3:6] == bytes([255, 0, 255])
 
 
-def test_mode_frame_layout_and_no_save_by_default() -> None:
+def test_mode_frame_layout_and_save_byte_is_zero() -> None:
     frame = protocol.mode_frame(0x03, 5, 30, 2)
     assert frame == bytes.fromhex("080203051e080200")  # speed 5 is symmetric: 10 - 5
     assert frame[7] == 0x00
@@ -51,10 +51,6 @@ def test_raindrop_is_kept_but_not_advertised() -> None:
     assert protocol.MODES["raindrop"] == 0x0A
     assert "raindrop" in protocol.UNSUPPORTED_EFFECTS
     assert "raindrop" not in protocol.FIRMWARE_EFFECTS
-
-
-def test_save_byte_only_when_asked() -> None:
-    assert protocol.mode_frame(1, 3, 10, save=True)[7] == 0x01
 
 
 def test_off_frame() -> None:
@@ -111,10 +107,6 @@ def test_default_builders_never_emit_save_or_persist() -> None:
     assert all(len(f) == 8 for f in frames)
     assert all(f[0] != 0x1A for f in frames)
     assert all(f[7] == 0 for f in frames if f[0] == protocol.OP_MODE)
-
-
-def test_persist_frame_value() -> None:
-    assert protocol.persist_frame() == bytes.fromhex("1a00010400000001")
 
 
 def test_parse_and_format_color() -> None:

@@ -209,7 +209,6 @@ def test_cli_against_daemon(client: Client, capsys: pytest.CaptureFixture[str]) 
     out = capsys.readouterr().out
     assert "brightness     : 50 / 50" in out
     assert "mode           : wave" in out
-    assert run_cli(client, "save") == 2  # refuses without --confirm
     assert run_cli(client, "zone", "2", "00ffff") == 0
 
 
