@@ -1,6 +1,6 @@
 # Device protocol
 
-Status: UNVERIFIED on real hardware. Everything below comes from public protocol descriptions of the ITE 8291 rev 0.02 firmware, and no frame has been sent to a real keyboard by this project yet. All constants live in one file, `src/avell_keyboard_rgb/protocol.py`, so a value that turns out to be wrong after the first hardware test is a one-file fix. The code was written from these facts, not copied from any GPL driver.
+Status: first hardware test done on 2026-11-24 on a real ITE 8291 rev 0.02 laptop keyboard. Evidence: `rgb-test-20261124-011715.log` (frame log plus the tester's answers). Each assumption below is marked verified or unverified with that date. The facts come from public protocol descriptions and the test; all constants live in one file, `src/avell_keyboard_rgb/protocol.py`, so a value that turns out to be wrong is a one-file fix. The code was written from these facts, not copied from any GPL driver.
 
 ## Device
 
@@ -12,11 +12,11 @@ Status: UNVERIFIED on real hardware. Everything below comes from public protocol
 | Node | `/dev/hidrawN`, found by scanning `/sys/class/hidraw/*/device/uevent` for `HID_ID=0003:0000048D:0000CE00`, skipping nodes whose report descriptor does not contain usage page `06 12 FF` |
 | Kernel driver | none to detach; the hidraw node is used directly |
 
-The keys are not individually addressable on this revision. There are 4 zones, numbered 1 to 4 from left to right (zone order on the physical keyboard is to be confirmed).
+The keys are not individually addressable on this revision. There are 4 zones, numbered 1 to 4 from left to right (verified 2026-11-24, `rgb-test-20261124-011715.log`: zone 1 far left, 2 centre left, 3 centre right, 4 far right, colours correct).
 
 ## Transport
 
-Each command is one 8 byte HID feature report with no report ID, sent with the `HIDIOCSFEATURE` ioctl on the hidraw node, using only the standard library (`fcntl.ioctl`). Because the device has no report ID, the buffer handed to the ioctl is 9 bytes: a leading `00` report number (which the kernel strips) followed by the 8 frame bytes. The ioctl request number is `HIDIOCSFEATURE(9) = 0xC0094806`, and a test checks it against the kernel macro. Nothing is ever read back.
+Each command is one 8 byte HID feature report with no report ID, sent with the `HIDIOCSFEATURE` ioctl on the hidraw node, using only the standard library (`fcntl.ioctl`). Because the device has no report ID, the buffer handed to the ioctl is 9 bytes: a leading `00` report number (which the kernel strips) followed by the 8 frame bytes. The ioctl request number is `HIDIOCSFEATURE(9) = 0xC0094806`, and a test checks it against the kernel macro. Nothing is ever read back. Verified 2026-11-24 (`rgb-test-20261124-011715.log`): the 9 byte buffer with the leading `00` is accepted and every ioctl returned 9.
 
 ## Frames
 
@@ -27,9 +27,40 @@ Each command is one 8 byte HID feature report with no report ID, sent with the `
 | `08 01 00 00 00 00 00 00` | Off |
 | `1a 00 01 04 00 00 00 01` | Persist frame. Only sent by the experimental save command |
 
-Modes: direct `01`, breathing `02`, wave `03`, rainbow `05`, raindrop `0a`, flashing `12`, gradient `13`. Ranges: brightness 0 to 50, speed 0 to 10, direction 0 to 4 (the meaning of direction values is inconsistent between sources and unverified).
+Modes: direct `01`, breathing `02`, wave `03`, rainbow `05`, raindrop `0a` (unsupported, see below), flashing `12`, gradient `13`. Ranges: brightness 0 to 50, user speed 0 to 10 (higher is faster, see below), direction 0 to 4.
 
-Static colours: four colour frames (`Z` 1 to 4), then the mode frame `08 02 01 03 BRIGHT 08 00 00`. A firmware effect: the palette colour frames (default palette: red, orange, yellow, green, blue, teal, purple, or the user's own, up to 7), then the mode frame with the effect's mode byte.
+Static colours: four colour frames (`Z` 1 to 4), then the mode frame `08 02 01 05 BRIGHT 08 00 00`. A firmware effect: the palette colour frames (default palette: red, orange, yellow, green, blue, teal, purple, or the user's own, up to 7), then the mode frame with the effect's mode byte.
+
+## Speed is inverted on the wire
+
+Verified 2026-11-24 (`rgb-test-20261124-011715.log`): wave at wire speed 2 looked faster than at wire speed 5, and wire speed 9 looked slower than that. A higher wire byte means slower. Everything above `protocol.py` (daemon, D-Bus, CLI, GUI) uses a user speed of 0 to 10 where higher is faster, and `mode_frame()` sends `10 - speed`. The inversion is in that one function and nowhere else. The static colour speed byte (`DIRECT_SPEED_WIRE`) is a wire value and is not inverted.
+
+## Hardware test results (2026-11-24)
+
+Evidence file for every row: `rgb-test-20261124-011715.log`.
+
+| Item | Status | Observed |
+|---|---|---|
+| 9 byte `HIDIOCSFEATURE` buffer with leading `00` | Verified | All ioctls returned 9 |
+| Zone order 1 to 4 | Verified | Far left, centre left, centre right, far right; colours correct |
+| Brightness byte | Verified | 0 gives no backlight, 10 < 25 < 50 in brightness |
+| Direct mode frame `08 02 01 05 19 08 00 00` | Verified | Lights the zones set by the colour frames |
+| Palette frames `14 00 Z R G B` for Z 1 to 7, sent before effects | Verified | Accepted and used by effects |
+| Speed inverted on the wire | Verified | See above |
+| Off frame `08 01 00 00 00 00 00 00` | Verified | Backlight completely off, tester answered y |
+| Breathing, flashing, gradient | Verified | Each cycles through the palette colours |
+| Wave with `BEHAV` 1 | Verified | Wave of colours moves left to right |
+| Wave with `BEHAV` 0, 2, 3, 4 and `BEHAV` on other effects | Unverified | Not tested. Wave defaults to 1 and all other effects to 0; other direction values are accepted but their meaning is unknown |
+| Rainbow | Verified, partly understood | Showed red, orange, yellow and green, each on a region. It seems to ignore or only partly use the 7 palette slots; no explanation is claimed |
+| Raindrop (`0a`) | Unsupported on rev 0.02 | Nothing happened, the display stayed on the previous rainbow |
+| Colour cast needing `COLOR_SCALE` | Unverified | Not examined beyond the primary colours looking right |
+| Brightness-only frame `09 02 BRIGHT 00 00 00 00 00` | Unverified | Not tested, not used |
+| State kept across suspend | Unverified | Not tested; the daemon re-applies after resume regardless |
+| SAVE byte and persist frame | Unverified | Never sent by the test or by default |
+
+## Raindrop
+
+The mode constant stays in `protocol.py` (`MODES`, with `UNSUPPORTED_EFFECTS`) because other revisions may use it. The daemon rejects `raindrop` with `InvalidArgument` unless the request carries the option `allow_unverified=true` (CLI: `--allow-unverified`). It is not in `ListEffects`, the CLI help or the GUI. See [dbus-interface.md](dbus-interface.md).
 
 ## What the software never sends
 
@@ -38,14 +69,11 @@ Static colours: four colour frames (`Z` 1 to 4), then the mode frame `08 02 01 0
 - No firmware update or flashing commands.
 - Frames outside the documented ranges: values are clamped in `protocol.py` before they reach the wire. Out of range brightness has been reported to wedge a different ITE chip.
 
-## Values to check in the first hardware test
+## Still to check
 
-1. Does a static colour frame sequence change the zones, and is the zone order left to right?
-2. Is the leading `00` report number correct for the hidraw ioctl, or does the device want the 8 bytes without it? (`REPORT_ID_PREFIX`)
-3. Does the speed number run fast to slow or slow to fast? (`INVERT_SPEED`)
-4. Are the wave direction values 0 to 4, 1 to 4, or 0 and 1? (`DIRECTION_MIN`, `DIRECTION_MAX`)
-5. Is there a colour cast that needs per channel scaling? (`COLOR_SCALE`)
-6. Do brightness changes need the full mode frame or does the device accept the brightness-only frame `09 02 BRIGHT 00 00 00 00 00`? The software uses the mode frame, which is the documented path.
-7. Does the keyboard keep its state across suspend, so that the re-apply on resume is only a safety net?
+1. Other wave direction values (`DIRECTION_MIN`, `DIRECTION_MAX`).
+2. A colour cast that needs per channel scaling (`COLOR_SCALE`).
+3. Whether suspend keeps the keyboard state.
+4. Whether the experimental firmware save works. It was not tested.
 
 If the `tuxedo-drivers` kernel module is loaded for this device it owns the HID device and the two would conflict; unload it or do not install this package.
