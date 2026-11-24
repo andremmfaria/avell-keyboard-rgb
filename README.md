@@ -4,12 +4,12 @@
 
 A daemon, command line tool and GTK4 GUI for the 4 zone keyboard backlight of the ITE 8291 controller (USB `048d:ce00`, bcdDevice 0.02) found in some Avell and Clevo/Tongfang laptops. It is an independent, unofficial project, not affiliated with or endorsed by Avell, ITE or Clevo. Product names are used only to identify the hardware this software works with.
 
-Status: version 0.1.1, written from published protocol descriptions. The frames were checked on a real ITE 8291 rev 0.02 keyboard on 2026-11-24 (static zones, brightness, off, speed, most effects); see [docs/protocol.md](docs/protocol.md) for what is verified and what is not. The test suite itself uses a fake keyboard.
+Status: version 0.1.2, written from published protocol descriptions. The frames were checked on a real ITE 8291 rev 0.02 keyboard on 2026-11-24 (static zones, brightness, off, speed, most effects); see [docs/protocol.md](docs/protocol.md) for what is verified and what is not. The test suite itself uses a fake keyboard.
 
 ## What it does
 
 - Four independent zone colours, brightness 0 to 50, on and off.
-- Firmware effects: breathing, wave, rainbow, flashing, gradient, with speed (0 to 10, higher is faster), direction and a palette of up to 7 colours.
+- Firmware effects: breathing, wave, rainbow, flashing, gradient, with speed (0 to 10, higher is faster; 9 and 10 are the same speed on this firmware), direction and a palette of up to 7 colours.
 - Software effects run by the daemon (rate limited, default 10 updates a second, never more than 20): `cpu-temp` (keyboard colour follows CPU temperature), `battery` (the 4 zones are a charge bar), `fade` (slow colour cycle across the zones).
 - Named profiles, kept in `/var/lib/avell-keyboard-rgb/profiles`.
 - The daemon re-applies the stored state at start, after resume from suspend, and retries every 5 seconds while the keyboard is missing.

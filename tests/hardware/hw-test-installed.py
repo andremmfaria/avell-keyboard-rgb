@@ -36,6 +36,7 @@ SEVEN = ["ff0000", "ff8800", "ffff00", "00ff00", "00ffff", "0000ff", "ff00ff"]
 OTHER_SEVEN = ["ffffff", "ff00ff", "00ffff", "ffff00", "0000ff", "00ff00", "ff0000"]
 DIRECTIONS = [0, 1, 2, 3, 4]
 OTHER_EFFECTS = ["breathing", "flashing", "gradient"]
+SWEEP_SPEEDS = [0, 1, 5, 8, 9, 10]
 
 
 class Ctx:
@@ -279,7 +280,20 @@ def step5(ctx: Ctx) -> None:
 
 
 def step6(ctx: Ctx) -> None:
-    step(ctx, "6. Kernel log lines for 048d (for the re-enumeration question)")
+    step(ctx, "6. Speed sweep (wave at user speeds 0, 1, 5, 8, 9, 10)")
+    cli(ctx, "brightness", "30")
+    for speed in SWEEP_SPEEDS:
+        cli(ctx, "effect", "wave", "--speed", str(speed))
+        ask(
+            ctx,
+            f"wave --speed {speed}: does it move, and how fast relative to the others "
+            "(slowest / slow / medium / fast / fastest)? Does it freeze or glitch?",
+        )
+    ask(ctx, "Do speed 9 and speed 10 look identical (same pace, both moving)? (y/n, describe)")
+
+
+def step7(ctx: Ctx) -> None:
+    step(ctx, "7. Kernel log lines for 048d (for the re-enumeration question)")
     code, out = run(ctx, ["journalctl", "-k", "-b", "--no-pager"], timeout=40)
     if ctx.dry_run:
         print("[dry-run] filter the output for lines containing 048d (case-insensitive)")
@@ -329,7 +343,7 @@ def main() -> int:
     try:
         if not preflight(ctx):
             return 2
-        for fn in (step1, step2, step3, step4, step5, step6):
+        for fn in (step1, step2, step3, step4, step5, step6, step7):
             fn(ctx)
         ask(ctx, "Any other remarks?")
     except KeyboardInterrupt:

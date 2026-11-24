@@ -34,6 +34,8 @@ Static colours: four colour frames (`Z` 1 to 4), then the mode frame `08 02 01 0
 
 Verified 2026-11-24 (`rgb-test-20261124-011715.log`): wave at wire speed 2 looked faster than at wire speed 5, and wire speed 9 looked slower than that. A higher wire byte means slower. Everything above `protocol.py` (daemon, D-Bus, CLI, GUI) uses a user speed of 0 to 10 where higher is faster, and `mode_frame()` sends `10 - speed`. The inversion is in that one function and nowhere else. The static colour speed byte (`DIRECT_SPEED_WIRE`) is a wire value and is not inverted.
 
+Wire speed 0 is invalid. Verified 2026-11-24 on the installed 0.1.1 package (evidence: user report, no log): user speed 10, which 0.1.1 sent as wire byte 0, made every firmware effect glitch and go static, while user speed 9 (wire 1) worked and was very fast. So wire 1 is the fastest valid value, and `mode_frame()` sends `max(1, 10 - speed)`: user 9 and user 10 both send wire 1 and are the same speed on this firmware. The user facing range stays 0 to 10. The slow end (user 0, wire 10) has not been checked on its own; wire 9 was slow in the first hardware test. The installed hardware test has a speed sweep step to check it.
+
 ## Hardware test results (2026-11-24)
 
 Evidence file for every row: `rgb-test-20261124-011715.log`.
@@ -46,6 +48,8 @@ Evidence file for every row: `rgb-test-20261124-011715.log`.
 | Direct mode frame `08 02 01 05 19 08 00 00` | Verified | Lights the zones set by the colour frames |
 | Palette frames `14 00 Z R G B` for Z 1 to 7, sent before effects | Verified | Accepted and used by effects |
 | Speed inverted on the wire | Verified | See above |
+| Wire speed 0 | Verified invalid | Effects glitch and go static (user report 2026-11-24 on installed 0.1.1, no log). Wire 1 works and is the fastest |
+| Wire speed 10 (user 0, slowest) | Unverified | Not tested on its own; the speed sweep in the installed hardware test covers it |
 | Off frame `08 01 00 00 00 00 00 00` | Verified | Backlight completely off, tester answered y |
 | Breathing, flashing, gradient | Verified | Each cycles through the palette colours |
 | Wave with `BEHAV` 1 | Verified | Wave of colours moves left to right |
