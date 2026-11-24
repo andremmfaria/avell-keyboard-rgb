@@ -38,7 +38,8 @@ SPEED_MAX = 10
 DIRECTION_MIN = 0
 DIRECTION_MAX = 4
 # Verified 2026-11-24: on the wire a larger speed byte is SLOWER. Callers use
-# 0..10 where higher is faster; mode_frame() sends SPEED_MAX - speed.
+# 0..10 where higher is faster; mode_frame() sends SPEED_MAX - speed, never below 1.
+WIRE_SPEED_MIN = 1
 # Per channel scale (numerator over 255) for panels with a colour cast.
 COLOR_SCALE = (255, 255, 255)
 
@@ -136,8 +137,10 @@ def mode_frame(
 
     `speed` is the user value, 0..10, higher is faster; it is inverted on the wire.
     """
-    # User speed 0..10 (higher is faster) -> wire byte (higher is slower).
-    speed = SPEED_MAX - clamp(speed, SPEED_MIN, SPEED_MAX)
+    # User speed 0..10 (higher is faster) -> wire byte (higher is slower). Wire 0
+    # is invalid: the effect glitches and freezes (verified on hardware 2026-11-24
+    # by user report), so the fastest valid byte is 1 and user 9 and 10 both send it.
+    speed = max(WIRE_SPEED_MIN, SPEED_MAX - clamp(speed, SPEED_MIN, SPEED_MAX))
     return _frame(
         OP_MODE,
         POWER_ON,

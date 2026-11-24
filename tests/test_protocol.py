@@ -28,14 +28,25 @@ def test_mode_frame_layout_and_save_byte_is_zero() -> None:
 
 def test_mode_frame_clamps() -> None:
     frame = protocol.mode_frame(0x02, 99, 99, 99)
-    assert frame[3] == 0  # clamped to user speed 10, which is wire 0
+    assert frame[3] == 1  # clamped to user speed 10, which is wire 1 (wire 0 freezes)
     assert frame[4] == protocol.BRIGHTNESS_MAX
     assert frame[6] == protocol.DIRECTION_MAX
     low = protocol.mode_frame(0x02, -4, -4)
     assert low[3] == protocol.SPEED_MAX and low[4] == 0
 
 
-@pytest.mark.parametrize(("speed", "wire"), [(0, 10), (2, 8), (5, 5), (9, 1), (10, 0)])
+@pytest.mark.parametrize("mode", [protocol.MODE_DIRECT, *protocol.MODES.values()])
+def test_wire_speed_is_never_zero(mode: int) -> None:
+    # Wire 0 freezes the effect on real hardware (user report 2026-11-24).
+    for speed in [-5, *range(protocol.SPEED_MIN, protocol.SPEED_MAX + 1), 11, 99]:
+        assert 1 <= protocol.mode_frame(mode, speed, 25, 1)[3] <= protocol.SPEED_MAX
+
+
+def test_user_speed_10_equals_9_on_the_wire() -> None:
+    assert protocol.mode_frame(0x03, 10, 25, 1) == protocol.mode_frame(0x03, 9, 25, 1)
+
+
+@pytest.mark.parametrize(("speed", "wire"), [(0, 10), (2, 8), (5, 5), (9, 1), (10, 1)])
 def test_speed_is_inverted_on_the_wire(speed: int, wire: int) -> None:
     # Hardware test 2026-11-24: higher wire byte is slower, so higher user speed is faster.
     assert protocol.mode_frame(0x03, speed, 25, 1)[3] == wire
