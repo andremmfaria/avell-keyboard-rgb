@@ -1,0 +1,181 @@
+"""ITE 8291 rev 0.02 (048d:ce00) wire protocol: every constant and frame builder lives here.
+
+Status: UNVERIFIED on real hardware. The values come from public protocol facts
+(see docs/protocol.md). If the hardware test shows a different value, this is the
+only module that needs to change. Nothing here touches the device.
+
+The code is written from the protocol description, not copied from any GPL driver.
+"""
+
+from __future__ import annotations
+
+from collections.abc import Sequence
+
+# --- device identity -------------------------------------------------------
+USB_VENDOR_ID = 0x048D
+USB_PRODUCT_ID = 0xCE00
+# Text found in /sys/class/hidraw/hidrawN/device/uevent for the right device.
+HID_ID_STRING = "HID_ID=0003:0000048D:0000CE00"
+# Vendor interface 1 declares this usage page; used to skip other interfaces.
+USAGE_PAGE = 0xFF12
+# Short item "Usage Page (16 bit)" = 0x06, then the page little endian.
+USAGE_PAGE_DESCRIPTOR_BYTES = bytes([0x06, USAGE_PAGE & 0xFF, USAGE_PAGE >> 8])
+
+# --- transport -------------------------------------------------------------
+FRAME_LENGTH = 8
+# The device has no report ID. hidraw wants a leading report number byte in the
+# buffer; for "no report ID" that byte is 0x00 and the kernel strips it.
+REPORT_ID_PREFIX = b"\x00"
+
+# --- value ranges ----------------------------------------------------------
+ZONE_COUNT = 4
+PALETTE_SIZE = 7
+BRIGHTNESS_MIN = 0
+BRIGHTNESS_MAX = 50
+SPEED_MIN = 0
+SPEED_MAX = 10
+DIRECTION_MIN = 0
+DIRECTION_MAX = 4
+# Some firmware may treat a larger speed number as slower. Flip this after the
+# hardware test if "speed 10" turns out to be the slowest.
+INVERT_SPEED = False
+# Per channel scale (numerator over 255) for panels with a colour cast.
+COLOR_SCALE = (255, 255, 255)
+
+# --- opcodes ---------------------------------------------------------------
+OP_COLOR = 0x14
+OP_MODE = 0x08
+# Power state byte of the mode frame.
+POWER_OFF = 0x01
+POWER_ON = 0x02
+# Fixed seventh byte of the mode frame.
+MODE_FIXED_BYTE = 0x08
+# Persist frame. Only ever sent by the explicit, experimental save command.
+PERSIST_FRAME = bytes([0x1A, 0x00, 0x01, 0x04, 0x00, 0x00, 0x00, 0x01])
+SAVE_FLAG = 0x01
+
+# --- modes -----------------------------------------------------------------
+MODE_DIRECT = 0x01
+MODES: dict[str, int] = {
+    "breathing": 0x02,
+    "wave": 0x03,
+    "rainbow": 0x05,
+    "raindrop": 0x0A,
+    "flashing": 0x12,
+    "gradient": 0x13,
+}
+FIRMWARE_EFFECTS: tuple[str, ...] = tuple(MODES)
+# Speed byte used for static colours (value used by the Linux kernel driver).
+DIRECT_SPEED = 3
+
+# Default effect palette (red, orange, yellow, green, blue, teal, purple).
+DEFAULT_PALETTE: tuple[tuple[int, int, int], ...] = (
+    (0xFF, 0x00, 0x00),
+    (0xFF, 0x1C, 0x00),
+    (0xFF, 0x77, 0x00),
+    (0x00, 0xFF, 0x00),
+    (0x00, 0x00, 0xFF),
+    (0x00, 0xFF, 0xFF),
+    (0xFF, 0x00, 0xFF),
+)
+
+RGB = tuple[int, int, int]
+Frame = bytes
+
+
+def clamp(value: int, low: int, high: int) -> int:
+    return max(low, min(high, int(value)))
+
+
+def _scale(rgb: RGB) -> RGB:
+    r, g, b = (clamp(c, 0, 255) for c in rgb)
+    sr, sg, sb = COLOR_SCALE
+    return (r * sr // 255, g * sg // 255, b * sb // 255)
+
+
+def parse_color(text: str) -> RGB:
+    """Parse 'rrggbb' or '#rrggbb'. Raises ValueError on anything else."""
+    value = text.strip().lstrip("#")
+    if len(value) != 6 or any(c not in "0123456789abcdefABCDEF" for c in value):
+        raise ValueError(f"invalid colour {text!r}, expected rrggbb")
+    return (int(value[0:2], 16), int(value[2:4], 16), int(value[4:6], 16))
+
+
+def format_color(rgb: RGB) -> str:
+    return "{:02x}{:02x}{:02x}".format(*(clamp(c, 0, 255) for c in rgb))
+
+
+def _frame(*data: int) -> Frame:
+    frame = bytes(data)
+    if len(frame) != FRAME_LENGTH:
+        raise ValueError("frame must be 8 bytes")
+    return frame
+
+
+def color_frame(index: int, rgb: RGB) -> Frame:
+    """Colour definition. Index 1..4 are zones in direct mode, 1..7 the effect palette."""
+    if not 1 <= index <= max(ZONE_COUNT, PALETTE_SIZE):
+        raise ValueError(f"colour index {index} out of range")
+    r, g, b = _scale(rgb)
+    return _frame(OP_COLOR, 0x00, index, r, g, b, 0x00, 0x00)
+
+
+def mode_frame(
+    mode: int,
+    speed: int,
+    brightness: int,
+    behaviour: int = 0,
+    *,
+    save: bool = False,
+) -> Frame:
+    """Mode frame: 08 02 MODE SPEED BRIGHT 08 BEHAV SAVE. SAVE is 0 unless asked."""
+    speed = clamp(speed, SPEED_MIN, SPEED_MAX)
+    if INVERT_SPEED:
+        speed = SPEED_MAX - speed
+    return _frame(
+        OP_MODE,
+        POWER_ON,
+        mode,
+        speed,
+        clamp(brightness, BRIGHTNESS_MIN, BRIGHTNESS_MAX),
+        MODE_FIXED_BYTE,
+        clamp(behaviour, DIRECTION_MIN, DIRECTION_MAX),
+        SAVE_FLAG if save else 0x00,
+    )
+
+
+def off_frame() -> Frame:
+    return _frame(OP_MODE, POWER_OFF, 0, 0, 0, 0, 0, 0)
+
+
+def persist_frame() -> Frame:
+    return PERSIST_FRAME
+
+
+def zones_frames(colors: Sequence[RGB], brightness: int, *, save: bool = False) -> list[Frame]:
+    """Frames for a static 4 zone image: four colour frames, then direct mode."""
+    if len(colors) != ZONE_COUNT:
+        raise ValueError(f"expected {ZONE_COUNT} colours, got {len(colors)}")
+    frames = [color_frame(i + 1, rgb) for i, rgb in enumerate(colors)]
+    frames.append(mode_frame(MODE_DIRECT, DIRECT_SPEED, brightness, save=save))
+    return frames
+
+
+def effect_frames(
+    name: str,
+    speed: int,
+    brightness: int,
+    palette: Sequence[RGB] | None = None,
+    direction: int = 0,
+    *,
+    save: bool = False,
+) -> list[Frame]:
+    """Frames for a firmware effect: palette colour frames, then the mode frame."""
+    if name not in MODES:
+        raise ValueError(f"unknown firmware effect {name!r}")
+    colors = list(palette) if palette else list(DEFAULT_PALETTE)
+    if not 1 <= len(colors) <= PALETTE_SIZE:
+        raise ValueError(f"palette needs 1 to {PALETTE_SIZE} colours")
+    frames = [color_frame(i + 1, rgb) for i, rgb in enumerate(colors)]
+    frames.append(mode_frame(MODES[name], speed, brightness, direction, save=save))
+    return frames

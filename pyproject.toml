@@ -1,0 +1,46 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "avell-keyboard-rgb"
+version = "0.1.0"
+description = "Daemon, CLI and GTK4 GUI for the 4 zone ITE 8291 (rev 0.02) keyboard backlight"
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.10"
+authors = [{ name = "Andre Faria" }]
+# PyGObject is deliberately not listed: it comes from the distribution package
+# (python3-gi / python3-gobject) so the GTK typelibs match.
+dependencies = []
+
+[project.scripts]
+avell-rgbd = "avell_keyboard_rgb.daemon:main"
+avell-rgb = "avell_keyboard_rgb.cli:main"
+avell-rgb-gui = "avell_keyboard_rgb.gui.app:main"
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "ruff", "mypy"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "W"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/dbus_server_helper.py" = ["E402"]
+
+[tool.mypy]
+python_version = "3.10"
+ignore_missing_imports = true
+check_untyped_defs = true
