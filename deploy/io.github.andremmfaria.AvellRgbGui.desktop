@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Avell Keyboard RGB
+GenericName=Keyboard backlight
+Comment=Set the 4 zone keyboard backlight colours and effects
+Exec=avell-rgb-gui
+Icon=io.github.andremmfaria.AvellRgbGui
+Terminal=false
+Categories=Settings;HardwareSettings;GTK;
+Keywords=keyboard;backlight;rgb;led;avell;
+StartupNotify=true

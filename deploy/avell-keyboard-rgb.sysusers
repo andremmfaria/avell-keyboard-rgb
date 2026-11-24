@@ -1,0 +1,2 @@
+# System user and group for avell-rgbd. Installed to /usr/lib/sysusers.d/avell-keyboard-rgb.conf
+u avell-rgb - "Avell keyboard RGB daemon" -

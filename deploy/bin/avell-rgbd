@@ -1,0 +1,6 @@
+#!/bin/sh
+# Launcher: the package keeps its Python code in /usr/lib/avell-keyboard-rgb so one noarch
+# package works for every Python 3.10+ on Debian family and Fedora family systems.
+PYTHONPATH=/usr/lib/avell-keyboard-rgb${PYTHONPATH:+:$PYTHONPATH}
+export PYTHONPATH
+exec /usr/bin/python3 -m avell_keyboard_rgb.daemon "$@"

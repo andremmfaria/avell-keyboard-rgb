@@ -1,0 +1,115 @@
+# One definition for both packages. Build with:
+#   VERSION=0.1.0 nfpm package --packager deb --target dist/
+#   VERSION=0.1.0 nfpm package --packager rpm --target dist/
+# The code is pure Python, so the packages are architecture independent (deb "all", rpm "noarch").
+#
+# Install location: the Python package goes to /usr/lib/avell-keyboard-rgb/avell_keyboard_rgb and
+# the launchers in /usr/bin put that directory on PYTHONPATH. Debian uses python3/dist-packages and
+# Fedora uses python3.X/site-packages, and the latter changes with every Python release, so a
+# private directory is the only single noarch layout that works on both and on Python 3.14. It
+# also never touches the PEP 668 "externally managed" Python environment: pip is not involved.
+name: avell-keyboard-rgb
+arch: all
+platform: linux
+version: ${VERSION}
+section: utils
+priority: optional
+maintainer: Andre Faria <andremmfaria@users.noreply.github.com>
+description: |
+  Daemon, CLI and GTK4 GUI for the 4 zone ITE 8291 (048d:ce00, rev 0.02) keyboard backlight.
+  Controls zone colours, brightness, firmware effects and software effects through a system
+  D-Bus service. Experimental: not verified on hardware yet.
+vendor: avell-keyboard-rgb
+homepage: https://github.com/andremmfaria/avell-keyboard-rgb
+license: MIT
+
+# Debian family names by default; the rpm overrides below use Fedora family names.
+depends:
+  - python3 (>= 3.10)
+  - python3-gi
+  - gir1.2-gtk-4.0
+  - gir1.2-adw-1
+  - dbus
+  - polkitd | policykit-1
+  - systemd
+  - udev
+overrides:
+  rpm:
+    depends:
+      - python3 >= 3.10
+      - python3-gobject
+      - gtk4
+      - libadwaita >= 1.5
+      - dbus-daemon
+      - polkit
+      - systemd
+
+contents:
+  - src: src/avell_keyboard_rgb
+    dst: /usr/lib/avell-keyboard-rgb/avell_keyboard_rgb
+    type: tree
+  - src: deploy/bin/avell-rgb
+    dst: /usr/bin/avell-rgb
+    file_info:
+      mode: 0755
+  - src: deploy/bin/avell-rgbd
+    dst: /usr/bin/avell-rgbd
+    file_info:
+      mode: 0755
+  - src: deploy/bin/avell-rgb-gui
+    dst: /usr/bin/avell-rgb-gui
+    file_info:
+      mode: 0755
+  - src: deploy/avell-rgbd.service
+    dst: /usr/lib/systemd/system/avell-rgbd.service
+    file_info:
+      mode: 0644
+  - src: deploy/99-avell-keyboard-rgb.rules
+    dst: /usr/lib/udev/rules.d/99-avell-keyboard-rgb.rules
+    file_info:
+      mode: 0644
+  - src: deploy/avell-keyboard-rgb.sysusers
+    dst: /usr/lib/sysusers.d/avell-keyboard-rgb.conf
+    file_info:
+      mode: 0644
+  - src: deploy/io.github.andremmfaria.AvellRgb.conf
+    dst: /usr/share/dbus-1/system.d/io.github.andremmfaria.AvellRgb.conf
+    file_info:
+      mode: 0644
+  - src: deploy/io.github.andremmfaria.AvellRgb.service
+    dst: /usr/share/dbus-1/system-services/io.github.andremmfaria.AvellRgb.service
+    file_info:
+      mode: 0644
+  - src: deploy/io.github.andremmfaria.AvellRgb.policy
+    dst: /usr/share/polkit-1/actions/io.github.andremmfaria.AvellRgb.policy
+    file_info:
+      mode: 0644
+  - src: deploy/io.github.andremmfaria.AvellRgbGui.desktop
+    dst: /usr/share/applications/io.github.andremmfaria.AvellRgbGui.desktop
+    file_info:
+      mode: 0644
+  - src: deploy/io.github.andremmfaria.AvellRgbGui.svg
+    dst: /usr/share/icons/hicolor/scalable/apps/io.github.andremmfaria.AvellRgbGui.svg
+    file_info:
+      mode: 0644
+  - src: README.md
+    dst: /usr/share/doc/avell-keyboard-rgb/README.md
+    file_info:
+      mode: 0644
+  - src: LICENSE
+    dst: /usr/share/doc/avell-keyboard-rgb/copyright
+    file_info:
+      mode: 0644
+  - src: docs/dbus-interface.md
+    dst: /usr/share/doc/avell-keyboard-rgb/dbus-interface.md
+    file_info:
+      mode: 0644
+  - src: docs/protocol.md
+    dst: /usr/share/doc/avell-keyboard-rgb/protocol.md
+    file_info:
+      mode: 0644
+
+scripts:
+  postinstall: deploy/scripts/postinstall.sh
+  preremove: deploy/scripts/preremove.sh
+  postremove: deploy/scripts/postremove.sh

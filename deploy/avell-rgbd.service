@@ -1,0 +1,52 @@
+# deploy/avell-rgbd.service
+# System daemon. Runs as the unprivileged avell-rgb user (created by sysusers.d), which owns
+# the keyboard's hidraw node through 99-avell-keyboard-rgb.rules. Started by udev when the
+# keyboard appears (SYSTEMD_WANTS) and by D-Bus activation when a client calls it.
+# Packages install it to /usr/lib/systemd/system/.
+[Unit]
+Description=Avell keyboard RGB daemon (ITE 8291 rev 0.02, 4 zones)
+Documentation=https://github.com/andremmfaria/avell-keyboard-rgb
+After=dbus.service
+
+[Service]
+Type=dbus
+BusName=io.github.andremmfaria.AvellRgb
+User=avell-rgb
+Group=avell-rgb
+ExecStart=/usr/bin/avell-rgbd
+Restart=on-failure
+RestartSec=2
+StateDirectory=avell-keyboard-rgb
+StateDirectoryMode=0755
+
+# Hardening. Only hidraw character devices are reachable; no network, no capabilities.
+DevicePolicy=closed
+DeviceAllow=char-hidraw rw
+NoNewPrivileges=yes
+CapabilityBoundingSet=
+AmbientCapabilities=
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateNetwork=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectControlGroups=yes
+ProtectClock=yes
+ProtectHostname=yes
+ProtectProc=invisible
+ProcSubset=pid
+RestrictAddressFamilies=AF_UNIX
+RestrictNamespaces=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+SystemCallFilter=~@privileged @resources
+UMask=0022
+
+[Install]
+# Not enabled by default: udev starts it when the keyboard is present.
+WantedBy=multi-user.target

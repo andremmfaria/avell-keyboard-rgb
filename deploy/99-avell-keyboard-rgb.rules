@@ -1,0 +1,6 @@
+# deploy/99-avell-keyboard-rgb.rules
+# Packages install this to the udev rules directory; from source copy it to /etc/udev/rules.d/.
+# Hands the ITE 8291 (048d:ce00) hidraw nodes to the avell-rgb group, mode 0660 (never
+# world-writable), and starts the daemon when the keyboard appears. The daemon itself picks
+# the vendor interface (usage page 0xFF12).
+SUBSYSTEM=="hidraw", KERNELS=="0003:048D:CE00.*", GROUP="avell-rgb", MODE="0660", TAG+="systemd", ENV{SYSTEMD_WANTS}+="avell-rgbd.service"

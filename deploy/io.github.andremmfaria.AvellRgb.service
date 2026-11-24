@@ -1,0 +1,6 @@
+# Installed to /usr/share/dbus-1/system-services/. Lets a client start the daemon on demand.
+[D-BUS Service]
+Name=io.github.andremmfaria.AvellRgb
+Exec=/bin/false
+User=avell-rgb
+SystemdService=avell-rgbd.service
