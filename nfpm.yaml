@@ -1,6 +1,6 @@
 # One definition for both packages. Build with:
-#   VERSION=0.1.1 nfpm package --packager deb --target dist/
-#   VERSION=0.1.1 nfpm package --packager rpm --target dist/
+#   VERSION=0.1.2 nfpm package --packager deb --target dist/
+#   VERSION=0.1.2 nfpm package --packager rpm --target dist/
 # The code is pure Python, so the packages are architecture independent (deb "all", rpm "noarch").
 #
 # Install location: the Python package goes to /usr/lib/avell-keyboard-rgb/avell_keyboard_rgb and

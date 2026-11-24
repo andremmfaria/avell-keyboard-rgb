@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "avell-keyboard-rgb"
-version = "0.1.1"
+version = "0.1.2"
 description = "Daemon, CLI and GTK4 GUI for the 4 zone ITE 8291 (rev 0.02) keyboard backlight"
 readme = "README.md"
 license = { text = "MIT" }
