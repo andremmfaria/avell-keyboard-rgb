@@ -15,7 +15,7 @@ examples:
   avell-rgb set 3366ff                        all zones the same colour
   avell-rgb zone 2 ff8800                     change one zone
   avell-rgb brightness 30                     0 to 50
-  avell-rgb effect wave --speed 5             firmware effect
+  avell-rgb effect wave --speed 8             firmware effect, speed 0 to 10, higher is faster
   avell-rgb effect breathing --palette ff0000 0000ff
   avell-rgb effect static                     back to plain colours
   avell-rgb off | on
@@ -104,13 +104,28 @@ def build_parser() -> argparse.ArgumentParser:
     sub.add_parser("off", help="turn the backlight off")
 
     p = sub.add_parser("effect", help="firmware effect, or 'static' for plain colours")
-    p.add_argument("name", choices=("static", *protocol.FIRMWARE_EFFECTS))
-    p.add_argument("--speed", type=_range_int(protocol.SPEED_MIN, protocol.SPEED_MAX, "speed"))
+    # raindrop is accepted here so the daemon can explain why it is refused; it is
+    # not listed in the help and only goes through with --allow-unverified.
+    p.add_argument(
+        "name",
+        choices=("static", *protocol.FIRMWARE_EFFECTS, *protocol.UNSUPPORTED_EFFECTS),
+        metavar="{" + ",".join(("static", *protocol.FIRMWARE_EFFECTS)) + "}",
+    )
+    p.add_argument(
+        "--speed",
+        type=_range_int(protocol.SPEED_MIN, protocol.SPEED_MAX, "speed"),
+        help="0 to 10, higher is faster (default 5)",
+    )
     p.add_argument("--palette", nargs="+", type=_color, metavar="RRGGBB", help="up to 7 colours")
     p.add_argument(
         "--direction",
         type=_range_int(protocol.DIRECTION_MIN, protocol.DIRECTION_MAX, "direction"),
-        help="0 to 4, meaning is unverified",
+        help="0 to 4; only wave with 1 (left to right, the wave default) is verified",
+    )
+    p.add_argument(
+        "--allow-unverified",
+        action="store_true",
+        help="allow an effect that does nothing on rev 0.02 (raindrop)",
     )
 
     p = sub.add_parser("identify", help="flash one zone to tell which is which")
@@ -207,6 +222,8 @@ def run(args: argparse.Namespace, client: Any) -> int:
             options["palette"] = args.palette
         if args.direction is not None:
             options["direction"] = args.direction
+        if args.allow_unverified:
+            options["allow_unverified"] = True
         client.set_effect(args.name, options)
     elif cmd == "identify":
         client.identify_zone(args.zone)

@@ -151,7 +151,7 @@ def test_properties(client: Client) -> None:
 
 def test_effect_and_profiles(client: Client, env: Env) -> None:
     client.set_effect("wave", {"speed": 4, "palette": ["ff0000", "0000ff"]})
-    assert env.frames()[-1].startswith("08020304")
+    assert env.frames()[-1].startswith("08020306")
     client.save_profile("wavy")
     client.set_zones(["000000"] * 4)
     assert "wavy" in client.list_profiles()
@@ -174,6 +174,18 @@ def test_invalid_arguments_map_to_error(client: Client) -> None:
         with pytest.raises(ClientError) as info:
             call()
         assert info.value.kind == "InvalidArgument"
+
+
+def test_raindrop_rejected_over_bus_unless_allowed(client: Client, env: Env) -> None:
+    before = env.frames()
+    with pytest.raises(ClientError) as info:
+        client.set_effect("raindrop", {})
+    assert info.value.kind == "InvalidArgument"
+    assert "unsupported" in str(info.value)
+    assert env.frames() == before  # nothing was sent
+    client.set_effect("raindrop", {"allow_unverified": True})
+    assert env.frames()[-1].startswith("08020a")
+    assert "raindrop" not in client.list_effects()[0]
 
 
 def test_software_effect_over_bus(client: Client, env: Env) -> None:

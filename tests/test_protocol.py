@@ -22,17 +22,35 @@ def test_color_channels_are_clamped() -> None:
 
 def test_mode_frame_layout_and_no_save_by_default() -> None:
     frame = protocol.mode_frame(0x03, 5, 30, 2)
-    assert frame == bytes.fromhex("080203051e080200")
+    assert frame == bytes.fromhex("080203051e080200")  # speed 5 is symmetric: 10 - 5
     assert frame[7] == 0x00
 
 
 def test_mode_frame_clamps() -> None:
     frame = protocol.mode_frame(0x02, 99, 99, 99)
-    assert frame[3] == protocol.SPEED_MAX
+    assert frame[3] == 0  # clamped to user speed 10, which is wire 0
     assert frame[4] == protocol.BRIGHTNESS_MAX
     assert frame[6] == protocol.DIRECTION_MAX
     low = protocol.mode_frame(0x02, -4, -4)
-    assert low[3] == 0 and low[4] == 0
+    assert low[3] == protocol.SPEED_MAX and low[4] == 0
+
+
+@pytest.mark.parametrize(("speed", "wire"), [(0, 10), (2, 8), (5, 5), (9, 1), (10, 0)])
+def test_speed_is_inverted_on_the_wire(speed: int, wire: int) -> None:
+    # Hardware test 2026-11-24: higher wire byte is slower, so higher user speed is faster.
+    assert protocol.mode_frame(0x03, speed, 25, 1)[3] == wire
+
+
+def test_wave_defaults_to_left_to_right_and_others_to_zero() -> None:
+    assert protocol.effect_frames("wave", 5, 25)[-1] == bytes.fromhex("08020305190801" + "00")
+    assert protocol.effect_frames("wave", 5, 25, direction=0)[-1][6] == 0
+    assert protocol.effect_frames("breathing", 5, 25)[-1][6] == 0
+
+
+def test_raindrop_is_kept_but_not_advertised() -> None:
+    assert protocol.MODES["raindrop"] == 0x0A
+    assert "raindrop" in protocol.UNSUPPORTED_EFFECTS
+    assert "raindrop" not in protocol.FIRMWARE_EFFECTS
 
 
 def test_save_byte_only_when_asked() -> None:
@@ -48,7 +66,7 @@ def test_zone_frames_sequence() -> None:
     assert len(frames) == 5
     assert frames[0] == bytes.fromhex("1400010102030000")
     assert frames[3] == bytes.fromhex("1400040a0b0c0000")
-    assert frames[4] == bytes.fromhex("0802010319080000")
+    assert frames[4] == bytes.fromhex("0802010519080000")
 
 
 def test_zone_frames_need_four_colours() -> None:

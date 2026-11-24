@@ -50,7 +50,7 @@ def test_firmware_effect_frames(rig: Rig) -> None:
     rig.controller.set_effect("wave", {"speed": 6, "palette": ["ff0000", "00ff00"]})
     frames = rig.take()
     assert len(frames) == 3
-    assert frames[-1][:5] == bytes([0x08, 0x02, 0x03, 6, rig.controller.state.brightness])
+    assert frames[-1][:5] == bytes([0x08, 0x02, 0x03, 10 - 6, rig.controller.state.brightness])
     rig.controller.set_effect("static", {})
     assert rig.take()[-1][2] == protocol.MODE_DIRECT
 

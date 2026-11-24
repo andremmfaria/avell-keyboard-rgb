@@ -57,16 +57,24 @@ def norm_effect(name: str, options: dict[str, Any]) -> dict[str, Any]:
     """Validate a firmware effect request. Name 'static' is handled by the caller."""
     if name not in protocol.MODES:
         raise InvalidArgument(f"unknown firmware effect {name!r}")
-    known = {"speed", "palette", "direction"}
+    known = {"speed", "palette", "direction", "allow_unverified"}
     extra = set(options) - known
     if extra:
         raise InvalidArgument(f"unknown option(s): {', '.join(sorted(extra))}")
+    allow = options.get("allow_unverified", False)
+    if not isinstance(allow, bool):
+        raise InvalidArgument("allow_unverified must be a boolean")
+    if name in protocol.UNSUPPORTED_EFFECTS and not allow:
+        raise InvalidArgument(
+            f"effect {name!r} is unsupported on ITE 8291 rev 0.02 (it did nothing in the "
+            "hardware test); pass allow_unverified=true to send it anyway"
+        )
     speed = check_range(
         "speed", options.get("speed", DEFAULT_SPEED), protocol.SPEED_MIN, protocol.SPEED_MAX
     )
     direction = check_range(
         "direction",
-        options.get("direction", 0),
+        options.get("direction", protocol.default_direction(name)),
         protocol.DIRECTION_MIN,
         protocol.DIRECTION_MAX,
     )
@@ -74,7 +82,15 @@ def norm_effect(name: str, options: dict[str, Any]) -> dict[str, Any]:
     if not isinstance(palette_in, (list, tuple)) or len(palette_in) > protocol.PALETTE_SIZE:
         raise InvalidArgument(f"palette must hold at most {protocol.PALETTE_SIZE} colours")
     palette = [norm_color(c) for c in palette_in]
-    return {"name": name, "speed": speed, "palette": palette, "direction": direction}
+    result: dict[str, Any] = {
+        "name": name,
+        "speed": speed,
+        "palette": palette,
+        "direction": direction,
+    }
+    if allow:
+        result["allow_unverified"] = True
+    return result
 
 
 @dataclass

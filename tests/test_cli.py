@@ -104,3 +104,15 @@ def test_bad_args_exit_2(argv: tuple[str, ...]) -> None:
 def test_status_output(capsys: pytest.CaptureFixture[str]) -> None:
     run("status")
     assert "connected" in capsys.readouterr().out
+
+
+def test_effect_help_lists_no_raindrop(capsys: pytest.CaptureFixture[str]) -> None:
+    with pytest.raises(SystemExit):
+        cli.build_parser().parse_args(["effect", "--help"])
+    out = capsys.readouterr().out
+    assert "{static,breathing,wave,rainbow,flashing,gradient}" in out
+
+
+def test_effect_allow_unverified_is_forwarded() -> None:
+    _, c = run("effect", "raindrop", "--allow-unverified")
+    assert c.calls == [("set_effect", "raindrop", {"allow_unverified": True})]

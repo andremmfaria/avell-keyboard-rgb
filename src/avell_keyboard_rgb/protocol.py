@@ -1,8 +1,9 @@
 """ITE 8291 rev 0.02 (048d:ce00) wire protocol: every constant and frame builder lives here.
 
-Status: UNVERIFIED on real hardware. The values come from public protocol facts
-(see docs/protocol.md). If the hardware test shows a different value, this is the
-only module that needs to change. Nothing here touches the device.
+Status: first hardware test done on 2026-11-24 (evidence: rgb-test-20261124-011715.log).
+docs/protocol.md lists what was verified and what is still unverified. This is the
+only module that knows wire values, including the speed inversion. Nothing here
+touches the device.
 
 The code is written from the protocol description, not copied from any GPL driver.
 """
@@ -36,9 +37,8 @@ SPEED_MIN = 0
 SPEED_MAX = 10
 DIRECTION_MIN = 0
 DIRECTION_MAX = 4
-# Some firmware may treat a larger speed number as slower. Flip this after the
-# hardware test if "speed 10" turns out to be the slowest.
-INVERT_SPEED = False
+# Verified 2026-11-24: on the wire a larger speed byte is SLOWER. Callers use
+# 0..10 where higher is faster; mode_frame() sends SPEED_MAX - speed.
 # Per channel scale (numerator over 255) for panels with a colour cast.
 COLOR_SCALE = (255, 255, 255)
 
@@ -64,9 +64,16 @@ MODES: dict[str, int] = {
     "flashing": 0x12,
     "gradient": 0x13,
 }
-FIRMWARE_EFFECTS: tuple[str, ...] = tuple(MODES)
-# Speed byte used for static colours (value used by the Linux kernel driver).
-DIRECT_SPEED = 3
+# Raindrop (0x0A) did nothing on rev 0.02: the display stayed on the previous
+# effect (hardware test 2026-11-24). The constant stays for other revisions.
+# The daemon rejects it unless the caller passes allow_unverified.
+UNSUPPORTED_EFFECTS: tuple[str, ...] = ("raindrop",)
+FIRMWARE_EFFECTS: tuple[str, ...] = tuple(n for n in MODES if n not in UNSUPPORTED_EFFECTS)
+# BEHAV byte 1 on wave moves left to right (verified). Other values 0..4 and the
+# BEHAV byte on other effects are unverified.
+WAVE_LEFT_TO_RIGHT = 1
+# Wire speed byte for static colours; 5 is what the hardware test sent.
+DIRECT_SPEED_WIRE = 5
 
 # Default effect palette (red, orange, yellow, green, blue, teal, purple).
 DEFAULT_PALETTE: tuple[tuple[int, int, int], ...] = (
@@ -128,10 +135,12 @@ def mode_frame(
     *,
     save: bool = False,
 ) -> Frame:
-    """Mode frame: 08 02 MODE SPEED BRIGHT 08 BEHAV SAVE. SAVE is 0 unless asked."""
-    speed = clamp(speed, SPEED_MIN, SPEED_MAX)
-    if INVERT_SPEED:
-        speed = SPEED_MAX - speed
+    """Mode frame: 08 02 MODE SPEED BRIGHT 08 BEHAV SAVE. SAVE is 0 unless asked.
+
+    `speed` is the user value, 0..10, higher is faster; it is inverted on the wire.
+    """
+    # User speed 0..10 (higher is faster) -> wire byte (higher is slower).
+    speed = SPEED_MAX - clamp(speed, SPEED_MIN, SPEED_MAX)
     return _frame(
         OP_MODE,
         POWER_ON,
@@ -152,12 +161,17 @@ def persist_frame() -> Frame:
     return PERSIST_FRAME
 
 
+def default_direction(name: str) -> int:
+    """BEHAV default: left to right for wave (verified), 0 for everything else."""
+    return WAVE_LEFT_TO_RIGHT if name == "wave" else 0
+
+
 def zones_frames(colors: Sequence[RGB], brightness: int, *, save: bool = False) -> list[Frame]:
     """Frames for a static 4 zone image: four colour frames, then direct mode."""
     if len(colors) != ZONE_COUNT:
         raise ValueError(f"expected {ZONE_COUNT} colours, got {len(colors)}")
     frames = [color_frame(i + 1, rgb) for i, rgb in enumerate(colors)]
-    frames.append(mode_frame(MODE_DIRECT, DIRECT_SPEED, brightness, save=save))
+    frames.append(mode_frame(MODE_DIRECT, SPEED_MAX - DIRECT_SPEED_WIRE, brightness, save=save))
     return frames
 
 
@@ -166,7 +180,7 @@ def effect_frames(
     speed: int,
     brightness: int,
     palette: Sequence[RGB] | None = None,
-    direction: int = 0,
+    direction: int | None = None,
     *,
     save: bool = False,
 ) -> list[Frame]:
@@ -177,5 +191,7 @@ def effect_frames(
     if not 1 <= len(colors) <= PALETTE_SIZE:
         raise ValueError(f"palette needs 1 to {PALETTE_SIZE} colours")
     frames = [color_frame(i + 1, rgb) for i, rgb in enumerate(colors)]
+    if direction is None:
+        direction = default_direction(name)
     frames.append(mode_frame(MODES[name], speed, brightness, direction, save=save))
     return frames

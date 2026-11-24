@@ -175,6 +175,7 @@ class MainWindow(Adw.ApplicationWindow):
         group.add(self._effect_row)
         self._speed_row = Adw.SpinRow.new_with_range(protocol.SPEED_MIN, protocol.SPEED_MAX, 1)
         self._speed_row.set_title("Speed")
+        self._speed_row.set_subtitle("0 slowest, 10 fastest")
         self._speed_row.set_value(5)
         self._speed_row.connect("notify::value", self._on_effect)
         group.add(self._speed_row)

@@ -84,3 +84,26 @@ def test_state_file_is_atomic_and_leaves_no_temp(tmp_path: Path) -> None:
     store.save(State())
     store.save(State(brightness=3))
     assert [p.name for p in tmp_path.iterdir()] == ["state.json"]
+
+
+def test_raindrop_rejected_without_flag() -> None:
+    with pytest.raises(InvalidArgument, match="unsupported"):
+        norm_effect("raindrop", {})
+    with pytest.raises(InvalidArgument):
+        norm_effect("raindrop", {"allow_unverified": False})
+
+
+def test_raindrop_allowed_with_flag_and_survives_reload() -> None:
+    effect = norm_effect("raindrop", {"allow_unverified": True})
+    assert effect["allow_unverified"] is True
+    assert State.from_dict(State(effect=effect).to_dict()).effect == effect
+
+
+def test_allow_unverified_must_be_boolean() -> None:
+    with pytest.raises(InvalidArgument):
+        norm_effect("wave", {"allow_unverified": 1})
+
+
+def test_wave_default_direction_is_left_to_right() -> None:
+    assert norm_effect("wave", {})["direction"] == 1
+    assert norm_effect("breathing", {})["direction"] == 0
