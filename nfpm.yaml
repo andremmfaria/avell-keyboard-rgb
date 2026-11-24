@@ -92,6 +92,34 @@ contents:
     dst: /usr/share/icons/hicolor/scalable/apps/io.github.andremmfaria.AvellRgbGui.svg
     file_info:
       mode: 0644
+  - src: deploy/icons/16x16/io.github.andremmfaria.AvellRgbGui.png
+    dst: /usr/share/icons/hicolor/16x16/apps/io.github.andremmfaria.AvellRgbGui.png
+    file_info:
+      mode: 0644
+  - src: deploy/icons/32x32/io.github.andremmfaria.AvellRgbGui.png
+    dst: /usr/share/icons/hicolor/32x32/apps/io.github.andremmfaria.AvellRgbGui.png
+    file_info:
+      mode: 0644
+  - src: deploy/icons/48x48/io.github.andremmfaria.AvellRgbGui.png
+    dst: /usr/share/icons/hicolor/48x48/apps/io.github.andremmfaria.AvellRgbGui.png
+    file_info:
+      mode: 0644
+  - src: deploy/icons/64x64/io.github.andremmfaria.AvellRgbGui.png
+    dst: /usr/share/icons/hicolor/64x64/apps/io.github.andremmfaria.AvellRgbGui.png
+    file_info:
+      mode: 0644
+  - src: deploy/icons/128x128/io.github.andremmfaria.AvellRgbGui.png
+    dst: /usr/share/icons/hicolor/128x128/apps/io.github.andremmfaria.AvellRgbGui.png
+    file_info:
+      mode: 0644
+  - src: deploy/icons/256x256/io.github.andremmfaria.AvellRgbGui.png
+    dst: /usr/share/icons/hicolor/256x256/apps/io.github.andremmfaria.AvellRgbGui.png
+    file_info:
+      mode: 0644
+  - src: deploy/icons/512x512/io.github.andremmfaria.AvellRgbGui.png
+    dst: /usr/share/icons/hicolor/512x512/apps/io.github.andremmfaria.AvellRgbGui.png
+    file_info:
+      mode: 0644
   - src: README.md
     dst: /usr/share/doc/avell-keyboard-rgb/README.md
     file_info:

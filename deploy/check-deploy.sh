@@ -18,7 +18,7 @@ run() { # run <label> <command...>
     if "$@" >/dev/null 2>&1; then ok "$label"; else bad "$label"; fi
 }
 
-scripts=("$here"/bin/* "$here"/scripts/*.sh "$here"/check-deploy.sh "$here"/check-packages.sh)
+scripts=("$here"/bin/* "$here"/scripts/*.sh "$here"/check-deploy.sh "$here"/check-packages.sh "$here"/render-icons.sh)
 for script in "${scripts[@]}"; do
     run "$(basename "$script") passes sh -n" bash -n "$script"
 done
@@ -89,6 +89,34 @@ if command -v desktop-file-validate >/dev/null; then
     run "desktop-file-validate" desktop-file-validate "$here"/*.desktop
 else
     echo "skip desktop-file-validate (not found)"
+fi
+
+# --- icons --------------------------------------------------------------------
+icon=io.github.andremmfaria.AvellRgbGui
+if python3 -c 'import sys, xml.dom.minidom as m; m.parse(sys.argv[1])' "$here/$icon.svg" 2>/dev/null; then
+    ok "icon svg parses as XML"
+else
+    bad "icon svg parses as XML"
+fi
+for size in 16 32 48 64 128 256 512; do
+    png=$here/icons/${size}x${size}/$icon.png
+    if [ ! -f "$png" ]; then
+        bad "icon png ${size}x${size} exists"
+        continue
+    fi
+    # PNG signature, then the IHDR width and height as big-endian 32 bit integers.
+    sig=$(head -c 8 "$png" | od -An -tx1 | tr -d ' \n')
+    dims=$(od -An -tu1 -j16 -N8 "$png" | awk '{print $1 * 16777216 + $2 * 65536 + $3 * 256 + $4 "x" $5 * 16777216 + $6 * 65536 + $7 * 256 + $8}')
+    if [ "$sig" = "89504e470d0a1a0a" ] && [ "$dims" = "${size}x${size}" ]; then
+        ok "icon png ${size}x${size} is a valid ${size}x${size} PNG"
+    else
+        bad "icon png ${size}x${size} is a valid ${size}x${size} PNG (got $dims)"
+    fi
+done
+if grep -q "^Icon=$icon\$" "$here/$icon.desktop"; then
+    ok "desktop file uses Icon=$icon"
+else
+    bad "desktop file uses Icon=$icon"
 fi
 
 # --- nfpm.yaml sources exist ----------------------------------------------------
