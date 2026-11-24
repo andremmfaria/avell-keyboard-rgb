@@ -1,8 +1,52 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
-  <rect x="8" y="34" width="112" height="60" rx="10" fill="#2b2b33"/>
-  <rect x="14" y="40" width="25" height="48" rx="5" fill="#e5484d"/>
-  <rect x="42" y="40" width="25" height="48" rx="5" fill="#30a46c"/>
-  <rect x="70" y="40" width="25" height="48" rx="5" fill="#3e63dd"/>
-  <rect x="98" y="40" width="16" height="48" rx="5" fill="#f5d90a"/>
-  <rect x="24" y="100" width="80" height="6" rx="3" fill="#2b2b33"/>
+  <title>Avell Keyboard RGB</title>
+  <defs>
+    <linearGradient id="slab" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3a3d50"/>
+      <stop offset="1" stop-color="#1b1c27"/>
+    </linearGradient>
+    <linearGradient id="z1" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ff9ccb"/>
+      <stop offset="1" stop-color="#f0245f"/>
+    </linearGradient>
+    <linearGradient id="z2" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffe08a"/>
+      <stop offset="1" stop-color="#ff8a1f"/>
+    </linearGradient>
+    <linearGradient id="z3" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#a6ffd0"/>
+      <stop offset="1" stop-color="#14c98a"/>
+    </linearGradient>
+    <linearGradient id="z4" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#a5d6ff"/>
+      <stop offset="1" stop-color="#4a5cff"/>
+    </linearGradient>
+    <radialGradient id="g1">
+      <stop offset="0" stop-color="#f0245f" stop-opacity="0.75"/>
+      <stop offset="1" stop-color="#f0245f" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="g2">
+      <stop offset="0" stop-color="#ff8a1f" stop-opacity="0.75"/>
+      <stop offset="1" stop-color="#ff8a1f" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="g3">
+      <stop offset="0" stop-color="#14c98a" stop-opacity="0.75"/>
+      <stop offset="1" stop-color="#14c98a" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="g4">
+      <stop offset="0" stop-color="#4a5cff" stop-opacity="0.8"/>
+      <stop offset="1" stop-color="#4a5cff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect x="6" y="6" width="116" height="116" rx="26" fill="url(#slab)"/>
+  <rect x="6.5" y="6.5" width="115" height="115" rx="25.5" fill="none" stroke="#ffffff" stroke-width="1.5" stroke-opacity="0.28"/>
+  <ellipse cx="26" cy="55" rx="19" ry="38" fill="url(#g1)"/>
+  <ellipse cx="51" cy="55" rx="19" ry="38" fill="url(#g2)"/>
+  <ellipse cx="77" cy="55" rx="19" ry="38" fill="url(#g3)"/>
+  <ellipse cx="102" cy="55" rx="19" ry="38" fill="url(#g4)"/>
+  <rect x="19" y="28" width="14" height="54" rx="7" fill="url(#z1)"/>
+  <rect x="44" y="28" width="14" height="54" rx="7" fill="url(#z2)"/>
+  <rect x="70" y="28" width="14" height="54" rx="7" fill="url(#z3)"/>
+  <rect x="95" y="28" width="14" height="54" rx="7" fill="url(#z4)"/>
+  <rect x="19" y="94" width="90" height="9" rx="4.5" fill="#ffffff" fill-opacity="0.38"/>
 </svg>
