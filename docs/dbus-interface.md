@@ -115,3 +115,11 @@ All properties are read only. `Mode` is `static`, `off` or a firmware effect nam
 - Writes to the keyboard are serialised; clients never see interleaved frames.
 - State is stored in `/var/lib/avell-keyboard-rgb/state.json` and re-applied when the daemon starts, after resume from suspend (logind `PrepareForSleep(false)`), and retried every 5 seconds while the keyboard is missing or a write failed.
 - Software effects never run faster than their `fps`, and identical frames are not re-sent.
+
+## Related documentation
+
+- [usage.md](usage.md): the CLI and GUI, which are clients of this interface.
+- [protocol.md](protocol.md): the frames the daemon sends for these calls.
+- [safety.md](safety.md): the polkit action and the permissions model.
+- [development.md](development.md): the repository layout and tests, including the check of the XML above.
+- [hardware.md](hardware.md): which effects and options are verified.

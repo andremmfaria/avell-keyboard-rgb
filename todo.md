@@ -1,6 +1,6 @@
 # TODO
 
-Open items after the first hardware test on 2026-11-24 (see docs/protocol.md for the verified and unverified protocol assumptions).
+Open items after the first hardware test on 2026-11-24 (see [docs/protocol.md](docs/protocol.md) for the verified and unverified protocol assumptions and [docs/hardware.md](docs/hardware.md) for the results). Development notes are in [docs/development.md](docs/development.md).
 
 ## Pending decision
 
@@ -11,7 +11,7 @@ Open items after the first hardware test on 2026-11-24 (see docs/protocol.md for
 - [ ] Wave directions other than BEHAV 1 (left to right), and the BEHAV byte on the other effects.
 - [ ] Rainbow showed only red, orange, yellow and green on four regions, so find out whether it uses the palette slots and how.
 - [ ] State across suspend and resume (logind PrepareForSleep reapply path).
-- [ ] Confirm the slow end of the speed range (user 0, wire 10) and that user 9 and 10 look identical, using the speed sweep step of `tests/hardware/hw-test-installed.py`.
+- [ ] Confirm the slow end of the speed range (user 0, wire 10) and that user 9 and 10 look identical, using the speed sweep step of [tests/hardware/hw-test-installed.py](tests/hardware/README.md).
 - [ ] Brightness-only frame and colour cast of the zone colours.
 - [ ] Look at the GUI on screen (so far only smoke tests under Xvfb).
 
