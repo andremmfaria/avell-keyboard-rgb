@@ -1,0 +1,87 @@
+name: Package
+
+# tag-release.yml calls this workflow directly (workflow_call) after it moves or creates the
+# v<version> tag. Tags pushed with GITHUB_TOKEN never trigger other workflows, so a plain
+# `push: tags` trigger alone would never fire for those tags. The tag push trigger stays for
+# tags pushed by a person, and workflow_dispatch allows a manual run.
+on:
+  workflow_call: {}
+  push:
+    tags: ["v*"]
+  workflow_dispatch: {}
+
+# contents: write is required to create/update the GitHub Release and attach assets to it,
+# using the workflow's own GITHUB_TOKEN - no extra secret is configured or needed.
+permissions:
+  contents: write
+
+env:
+  NFPM_VERSION: "2.49.0"
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # rpm is only needed to inspect the .rpm; lintian to lint the .deb.
+      - name: Install system packages
+        run: sudo apt-get update && sudo apt-get install -y rpm lintian
+
+      # nfpm is one zero-dependency Go binary; it builds both packages from nfpm.yaml.
+      - name: Install nfpm
+        run: |
+          curl -fsSL -o nfpm.tar.gz \
+            "https://github.com/goreleaser/nfpm/releases/download/v${NFPM_VERSION}/nfpm_${NFPM_VERSION}_Linux_x86_64.tar.gz"
+          tar xzf nfpm.tar.gz nfpm
+          sudo install -m 0755 nfpm /usr/local/bin/nfpm
+          nfpm --version
+
+      - name: Read the project version
+        id: version
+        run: |
+          VERSION=$(python3 -c "import tomllib; print(tomllib.load(open('pyproject.toml','rb'))['project']['version'])")
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
+
+      # Bytecode would be packaged by the tree copy, and it is Python version specific.
+      - name: Build .deb and .rpm (nfpm)
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          find src -name __pycache__ -prune -exec rm -rf {} +
+          mkdir -p dist
+          nfpm package --packager deb --target dist/
+          nfpm package --packager rpm --target dist/
+          ls -l dist/
+
+      # Inspects both packages: payload paths and modes, dependency names, maintainer scripts.
+      - name: Check package contents
+        run: deploy/check-packages.sh dist
+
+      # Informational: lintian reports Debian policy points (for example the missing man page
+      # and changelog) that a GitHub release package does not aim to satisfy.
+      - name: Lint the .deb (lintian, informational)
+        continue-on-error: true
+        run: lintian --no-tag-display-limit dist/*.deb
+
+      - name: Upload packages as workflow artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: packages
+          path: dist/*
+          if-no-files-found: error
+
+      # softprops/action-gh-release in update mode: if tag-release.yml moved an existing tag
+      # (version unchanged, new commit), this updates that tag's existing release in place
+      # instead of erroring on "release already exists"; if the tag is new, it creates the
+      # release. Either way both built files end up as downloadable release assets, not just
+      # workflow-run build artifacts.
+      - name: Create or update GitHub Release with built assets
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          files: dist/*
+          fail_on_unmatched_files: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

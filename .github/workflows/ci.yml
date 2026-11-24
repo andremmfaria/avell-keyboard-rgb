@@ -1,0 +1,74 @@
+name: CI
+
+# Runs on every push/PR touching main so breakage is caught before it lands, and on PRs
+# targeting main from any branch.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # PyGObject, GTK4 and libadwaita come from the distribution (the same packages the .deb
+      # depends on). dbus-daemon backs the D-Bus tests, xvfb the GUI tests. The rest are the
+      # tools the static checks use.
+      - name: Install system packages
+        run: >
+          sudo apt-get update && sudo apt-get install -y
+          python3-venv python3-gi gir1.2-gtk-4.0 gir1.2-adw-1 dbus xvfb
+          shellcheck desktop-file-utils libxml2-utils systemd udev
+
+      # --system-site-packages is what makes the distribution's python3-gi visible.
+      - name: Create the virtual environment
+        run: |
+          python3 -m venv --system-site-packages .venv
+          .venv/bin/pip install pytest ruff mypy
+          .venv/bin/pip install --no-deps -e .
+
+      - name: Check formatting (ruff format)
+        run: .venv/bin/ruff format --check .
+
+      # A new lint finding is fixed, not silenced.
+      - name: Lint (ruff check)
+        run: .venv/bin/ruff check .
+
+      - name: Type check (mypy)
+        run: .venv/bin/mypy src tests
+
+      # Static checks of the deploy files: shell syntax and shellcheck, udev rule syntax,
+      # systemd-analyze verify of the unit, D-Bus and polkit XML, desktop file, nfpm sources.
+      - name: Check the deploy files
+        run: deploy/check-deploy.sh
+
+      # No hardware is touched: the keyboard is a fake, D-Bus runs on a private dbus-daemon.
+      - name: Test (pytest)
+        run: xvfb-run -a .venv/bin/pytest
+
+  # The protocol, state store, effects engine and controller must stay free of GTK and
+  # PyGObject, and must run on every supported Python.
+  portable:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.10", "3.11", "3.12", "3.13", "3.14"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+
+      - name: Install test tools
+        run: |
+          pip install pytest
+          pip install --no-deps -e .
+
+      # The D-Bus and GUI modules skip themselves when PyGObject is absent.
+      - name: Test without PyGObject
+        run: pytest
