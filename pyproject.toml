@@ -39,6 +39,7 @@ select = ["E", "F", "I", "UP", "B", "SIM", "W"]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/dbus_server_helper.py" = ["E402"]
+"tests/hardware/hw-test-installed.py" = ["E501"]
 
 [tool.mypy]
 python_version = "3.10"
