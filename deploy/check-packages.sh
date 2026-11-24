@@ -27,6 +27,13 @@ need "deb icon" "$contents" '\./usr/share/icons/hicolor/scalable/apps/io\.github
 for size in 16 32 48 64 128 256 512; do
     need "deb icon ${size}x${size}" "$contents" "\\./usr/share/icons/hicolor/${size}x${size}/apps/io\\.github\\.andremmfaria\\.AvellRgbGui\\.png\$"
 done
+doc_dir=usr/share/doc/avell-keyboard-rgb
+need "deb ships the README" "$contents" "^-rw-r--r-- .* \\./$doc_dir/README\\.md\$"
+need "deb ships the licence as copyright" "$contents" "\\./$doc_dir/copyright\$"
+need "deb ships todo.md" "$contents" "\\./$doc_dir/todo\\.md\$"
+for doc in README install usage hardware safety troubleshooting development protocol dbus-interface; do
+    need "deb ships docs/$doc.md" "$contents" "^-rw-r--r-- .* \\./$doc_dir/docs/$doc\\.md\$"
+done
 need "deb is arch all" "$(dpkg-deb -f "$deb" Architecture)" '^all$'
 deb_depends=$(dpkg-deb -f "$deb" Depends)
 for dep in python3-gi gir1.2-gtk-4.0 gir1.2-adw-1 dbus systemd; do
@@ -50,6 +57,9 @@ need "rpm polkit policy" "$rpm_files" '/usr/share/polkit-1/actions/io\.github\.a
 need "rpm icon svg" "$rpm_files" '/usr/share/icons/hicolor/scalable/apps/io\.github\.andremmfaria\.AvellRgbGui\.svg$'
 for size in 16 32 48 64 128 256 512; do
     need "rpm icon ${size}x${size}" "$rpm_files" "/usr/share/icons/hicolor/${size}x${size}/apps/io\\.github\\.andremmfaria\\.AvellRgbGui\\.png\$"
+done
+for doc in README install usage hardware safety troubleshooting development protocol dbus-interface; do
+    need "rpm ships docs/$doc.md" "$rpm_files" "^-rw-r--r-- .* /$doc_dir/docs/$doc\\.md\$"
 done
 need "rpm is noarch" "$(rpm -qp --queryformat '%{ARCH}' "$rpm")" '^noarch$'
 rpm_requires=$(rpm -qpR "$rpm")

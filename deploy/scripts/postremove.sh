@@ -1,6 +1,6 @@
 #!/bin/sh
 # Runs after removal. State in /var/lib/avell-keyboard-rgb and the avell-rgb user are kept
-# (purge is a manual step, see README).
+# (purge is a manual step, see docs/install.md).
 set -e
 if command -v udevadm >/dev/null 2>&1; then
     udevadm control --reload || true

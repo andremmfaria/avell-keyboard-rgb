@@ -18,7 +18,7 @@ maintainer: Andre Faria <andremmfaria@users.noreply.github.com>
 description: |
   Daemon, CLI and GTK4 GUI for the 4 zone ITE 8291 (048d:ce00, rev 0.02) keyboard backlight.
   Controls zone colours, brightness, firmware effects and software effects through a system
-  D-Bus service. Experimental: not verified on hardware yet.
+  D-Bus service. Verified on one real rev 0.02 keyboard; see the documentation for the limits.
 vendor: avell-keyboard-rgb
 homepage: https://github.com/andremmfaria/avell-keyboard-rgb
 license: MIT
@@ -128,12 +128,46 @@ contents:
     dst: /usr/share/doc/avell-keyboard-rgb/copyright
     file_info:
       mode: 0644
-  - src: docs/dbus-interface.md
-    dst: /usr/share/doc/avell-keyboard-rgb/dbus-interface.md
+  - src: todo.md
+    dst: /usr/share/doc/avell-keyboard-rgb/todo.md
+    file_info:
+      mode: 0644
+  # The documentation keeps its repository layout (README.md next to docs/) so the relative
+  # links between the files still work. docs/README.md cannot share a directory with README.md.
+  - src: docs/README.md
+    dst: /usr/share/doc/avell-keyboard-rgb/docs/README.md
+    file_info:
+      mode: 0644
+  - src: docs/install.md
+    dst: /usr/share/doc/avell-keyboard-rgb/docs/install.md
+    file_info:
+      mode: 0644
+  - src: docs/usage.md
+    dst: /usr/share/doc/avell-keyboard-rgb/docs/usage.md
+    file_info:
+      mode: 0644
+  - src: docs/hardware.md
+    dst: /usr/share/doc/avell-keyboard-rgb/docs/hardware.md
+    file_info:
+      mode: 0644
+  - src: docs/safety.md
+    dst: /usr/share/doc/avell-keyboard-rgb/docs/safety.md
+    file_info:
+      mode: 0644
+  - src: docs/troubleshooting.md
+    dst: /usr/share/doc/avell-keyboard-rgb/docs/troubleshooting.md
+    file_info:
+      mode: 0644
+  - src: docs/development.md
+    dst: /usr/share/doc/avell-keyboard-rgb/docs/development.md
     file_info:
       mode: 0644
   - src: docs/protocol.md
-    dst: /usr/share/doc/avell-keyboard-rgb/protocol.md
+    dst: /usr/share/doc/avell-keyboard-rgb/docs/protocol.md
+    file_info:
+      mode: 0644
+  - src: docs/dbus-interface.md
+    dst: /usr/share/doc/avell-keyboard-rgb/docs/dbus-interface.md
     file_info:
       mode: 0644
 
