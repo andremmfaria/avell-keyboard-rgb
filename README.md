@@ -1,4 +1,6 @@
-# avell-keyboard-rgb
+<p align="center"><img src="deploy/io.github.andremmfaria.AvellRgbGui.svg" alt="avell-keyboard-rgb logo: four glowing backlight zones" width="128" height="128"></p>
+
+<h1 align="center">avell-keyboard-rgb</h1>
 
 A daemon, command line tool and GTK4 GUI for the 4 zone keyboard backlight of the ITE 8291 controller (USB `048d:ce00`, bcdDevice 0.02) found in some Avell and Clevo/Tongfang laptops. It is an independent, unofficial project, not affiliated with or endorsed by Avell, ITE or Clevo. Product names are used only to identify the hardware this software works with.
 

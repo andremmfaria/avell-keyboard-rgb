@@ -25,6 +25,7 @@ class App(Adw.Application):
 
     def do_activate(self) -> None:
         window = self.props.active_window or MainWindow(self, self._client)
+        window.set_icon_name(APP_ID)
         window.present()
 
 
