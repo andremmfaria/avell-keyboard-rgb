@@ -67,6 +67,12 @@ class PolkitAuthorizer:
                 callback(bool(reply[0]))
             except GLib.Error as exc:
                 log.error("polkit check failed: %s", exc.message)
+                if "trusted callers" in exc.message:
+                    log.error(
+                        "polkit only lets the action owner check other users' callers: "
+                        "the action in io.github.andremmfaria.AvellRgb.policy needs the "
+                        "org.freedesktop.policykit.owner annotation naming the daemon user"
+                    )
                 callback(False)
 
         connection.call(

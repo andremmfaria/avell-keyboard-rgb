@@ -3,6 +3,7 @@
 # - shell syntax of the launchers and maintainer scripts (and shellcheck when installed)
 # - the udev rule: syntax (udevadm verify), never world-writable
 # - systemd-analyze verify of the unit, plus the hardening keys the unit must keep
+# - the polkit owner annotation names the same user as the unit and the sysusers file
 # - the D-Bus policy, polkit policy and desktop file (xmllint, desktop-file-validate when installed)
 # - nfpm.yaml references only files that exist
 # usage: deploy/check-deploy.sh
@@ -75,6 +76,20 @@ if command -v systemd-analyze >/dev/null; then
     fi
 else
     echo "skip systemd-analyze verify (not found)"
+fi
+
+# --- polkit owner annotation ----------------------------------------------------
+# Polkit only lets the action owner check callers of other users, so the policy must name the
+# daemon user, and that name must match the unit and the sysusers file.
+policy=$here/io.github.andremmfaria.AvellRgb.policy
+owner=$(sed -n 's#.*<annotate key="org.freedesktop.policykit.owner">unix-user:\([^<]*\)</annotate>.*#\1#p' "$policy")
+unit_user=$(sed -n 's/^User=//p' "$unit")
+sysusers_user=$(awk '$1 == "u" {print $2; exit}' "$here/avell-keyboard-rgb.sysusers")
+if [ -n "$owner" ]; then ok "polkit policy has the owner annotation"; else bad "polkit policy has the owner annotation"; fi
+if [ -n "$owner" ] && [ "$owner" = "$unit_user" ] && [ "$owner" = "$sysusers_user" ]; then
+    ok "polkit owner matches User= and the sysusers name ($owner)"
+else
+    bad "polkit owner matches User= and the sysusers name (policy '$owner', unit '$unit_user', sysusers '$sysusers_user')"
 fi
 
 # --- XML and desktop files ----------------------------------------------------

@@ -13,5 +13,14 @@
       <allow_inactive>no</allow_inactive>
       <allow_active>yes</allow_active>
     </defaults>
+    <!--
+      The daemon runs as an unprivileged system user and asks polkit about callers that belong
+      to other users. Polkit refuses that ("Only trusted callers ... can use CheckAuthorization()
+      for subjects belonging to other identities") unless the caller is uid 0 or the action
+      owner. The owner must therefore be the daemon user, which has to match the name in
+      deploy/avell-keyboard-rgb.sysusers and User= in deploy/avell-rgbd.service
+      (deploy/check-deploy.sh and tests/test_deploy_policy.py enforce this).
+    -->
+    <annotate key="org.freedesktop.policykit.owner">unix-user:avell-rgb</annotate>
   </action>
 </policyconfig>
